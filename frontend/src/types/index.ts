@@ -1,5 +1,13 @@
 import { AxiosError } from 'axios'
 
+// Feature Types
+export interface UserFeature {
+  feature: string
+  context?: {
+    'max-projects'?: number
+  }
+}
+
 // User Types
 export interface User {
   id: string
@@ -10,9 +18,10 @@ export interface User {
   created_at?: string
   updated_at?: string
   active_project?: Project
-  permissions: {
-    can: {
-      createProject: AuthorizationResponse
+  features: UserFeature[]
+  permissions?: {
+    can?: {
+      createProject?: AuthorizationResponse
     }
   }
 }
@@ -96,6 +105,7 @@ export interface Project {
   id: string
   name: string
   description?: string
+  type: string
   role: 'owner' | 'member'
   created_at: string
   updated_at: string
@@ -106,6 +116,12 @@ export interface Project {
       delete: AuthorizationResponse
     }
   }
+}
+
+export interface CreateProjectData {
+  type: string
+  name: string
+  description?: string
 }
 
 // Channel Types

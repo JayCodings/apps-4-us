@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Components\Projects\Enums\ProjectTypeEnum;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -11,12 +12,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property string $id
  * @property string $name
  * @property string|null $description
+ * @property ProjectTypeEnum $type
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  */
 class Project extends BaseModel
 {
     use HasUuids;
+
+    protected $casts = [
+        'type' => ProjectTypeEnum::class,
+    ];
 
     public function users(): BelongsToMany
     {

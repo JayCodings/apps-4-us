@@ -1,12 +1,7 @@
 import useSWR, { mutate as globalMutate } from "swr";
 import { useCallback } from "react";
 import axios from "@/lib/axios";
-import type { Project } from "@/types";
-
-interface CreateProjectData {
-  name: string;
-  description?: string;
-}
+import type { Project, CreateProjectData } from "@/types";
 
 interface UpdateProjectData {
   name: string;
@@ -20,7 +15,8 @@ export function useProjects() {
 
   const createProject = useCallback(
     async (data: CreateProjectData) => {
-      const response = await axios.post("/api/projects", data);
+      const { type, ...projectData } = data;
+      const response = await axios.post(`/api/projects/${type}`, projectData);
       await mutate();
       await globalMutate("/api/user");
       return response.data;

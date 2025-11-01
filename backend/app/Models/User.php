@@ -23,6 +23,7 @@ use Illuminate\Notifications\Notifiable;
  * @property \Carbon\Carbon $updated_at
  * @property-read Project|null $activeProject
  * @property-read \Illuminate\Database\Eloquent\Collection<Project> $projects
+ * @property-read \Illuminate\Database\Eloquent\Collection<Feature> $features
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -64,5 +65,31 @@ class User extends Authenticatable implements MustVerifyEmail
     public function activeProject(): BelongsTo
     {
         return $this->belongsTo(Project::class, 'active_project_id');
+    }
+
+    public function features(): BelongsToMany
+    {
+        return $this->belongsToMany(Feature::class, 'user_features')
+            ->withPivot('context')
+            ->withTimestamps();
+    }
+
+    public function hasFeature(string $featureName): bool
+    {
+        return $this->features()->where('name', $featureName)->exists();
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getFeatureContext(string $featureName): ?array
+    {
+        $feature = $this->features()->where('name', $featureName)->first();
+
+        if (!$feature || !$feature->pivot->context) {
+            return null;
+        }
+
+        return json_decode($feature->pivot->context, true);
     }
 }

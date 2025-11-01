@@ -16,7 +16,14 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $user = $request->user();
+        $features = $this->resource->features->map(function ($feature) {
+            $context = $feature->pivot->context ? json_decode($feature->pivot->context, true) : null;
+
+            return [
+                'feature' => $feature->name,
+                'context' => $context,
+            ];
+        })->values()->all();
 
         return [
             "id" => $this->id,
@@ -26,11 +33,7 @@ class UserResource extends JsonResource
             "created_at" => $this->created_at?->toISOString(),
             "updated_at" => $this->updated_at?->toISOString(),
             "active_project" => $this->activeProject ? new ProjectResource($this->activeProject) : null,
-            "permissions" => [
-                "can" => [
-                    "createProject" => app(ProjectPolicy::class)->create($user)->toArray(),
-                ],
-            ],
+            "features" => $features,
         ];
     }
 }

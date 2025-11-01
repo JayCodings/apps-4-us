@@ -7,6 +7,7 @@ namespace App\Policies;
 use App\Models\Project;
 use App\Models\User;
 use Components\Projects\Enums\ProjectRoleEnum;
+use Components\Projects\Enums\ProjectTypeEnum;
 use Illuminate\Auth\Access\Response;
 
 class ProjectPolicy
@@ -25,15 +26,27 @@ class ProjectPolicy
             : Response::deny("You do not have access to this project.");
     }
 
-    public function create(User $user): Response
+    public function create(User $user, ProjectTypeEnum $type): Response
     {
-        $ownedProjectsCount = $user->projects()
-            ->wherePivot("role", ProjectRoleEnum::Owner->value)
-            ->count();
+        if (!$user->hasFeature($type->value)) {
+            return Response::deny("You do not have access to create projects of type " . $type->value . ".");
+        }
 
-        return $ownedProjectsCount < 2
-            ? Response::allow()
-            : Response::deny("You have reached the maximum of 2 projects.");
+        $context = $user->getFeatureContext($type->value);
+
+        if ($context && isset($context['max-projects'])) {
+            $maxProjects = (int) $context['max-projects'];
+            $currentCount = $user->projects()
+                ->wherePivot("role", ProjectRoleEnum::Owner->value)
+                ->where('type', $type->value)
+                ->count();
+
+            if ($currentCount >= $maxProjects) {
+                return Response::deny("You have reached the maximum of " . $maxProjects . " projects of type " . $type->value . ".");
+            }
+        }
+
+        return Response::allow();
     }
 
     public function update(User $user, Project $project): Response

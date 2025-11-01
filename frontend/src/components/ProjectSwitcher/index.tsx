@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useActionModal } from "@/hooks/useActionModal";
 import { Hash, LayoutDashboard } from "lucide-react";
 import type { Project, User } from "@/types";
+import { getProjectTypeConfig } from "@/config/projectTypes";
 
 export interface ProjectSwitcherProps {
   projects: Project[];
@@ -16,13 +17,9 @@ export function ProjectSwitcher({ projects, user, onProjectSelect }: ProjectSwit
   const router = useRouter();
   const pathname = usePathname();
   const { openAction } = useActionModal();
-  const canCreateProject = user.permissions.can.createProject.allowed;
-  const createProjectMessage = user.permissions.can.createProject.message;
 
   const handleAddProject = () => {
-    if (canCreateProject) {
-      openAction("create-project");
-    }
+    openAction("create-project");
   };
 
   const isDashboardActive = pathname?.startsWith("/dashboard");
@@ -52,14 +49,13 @@ export function ProjectSwitcher({ projects, user, onProjectSelect }: ProjectSwit
       ))}
       <motion.button
         onClick={handleAddProject}
-        disabled={!canCreateProject}
-        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-[#323339] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        whileHover={canCreateProject ? { backgroundColor: "#23A55A", scale: 0.9 } : {}}
-        whileTap={canCreateProject ? { backgroundColor: "#1E8E4F", scale: 0.9 } : {}}
+        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-[#323339] cursor-pointer"
+        whileHover={{ backgroundColor: "#23A55A", scale: 0.9 }}
+        whileTap={{ backgroundColor: "#1E8E4F", scale: 0.9 }}
         transition={{ duration: 0.15 }}
         aria-label="Add new project"
       >
-        <span className={`text-xl text-green-500 transition-colors ${canCreateProject ? "hover:text-white" : ""}`}>+</span>
+        <span className="text-xl text-green-500 transition-colors hover:text-white">+</span>
       </motion.button>
     </div>
   );
@@ -118,6 +114,9 @@ interface ProjectIconProps {
 }
 
 function ProjectIcon({ project, isActive, onClick }: ProjectIconProps) {
+  const projectTypeConfig = getProjectTypeConfig(project.type);
+  const Icon = projectTypeConfig?.icon || Hash;
+
   return (
     <button
       onClick={onClick}
@@ -139,7 +138,7 @@ function ProjectIcon({ project, isActive, onClick }: ProjectIconProps) {
         }}
         transition={{ duration: 0.15 }}
       >
-        <Hash className="w-5 h-5 text-white" />
+        <Icon className="w-5 h-5 text-white" />
       </motion.div>
 
       {/* Active indicator - white border on left */}

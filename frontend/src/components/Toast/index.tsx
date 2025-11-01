@@ -96,7 +96,7 @@ export interface ToastContainerProps {
 export function ToastContainer({ toasts, onDismiss }: ToastContainerProps) {
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-50 flex items-end px-4 py-6 sm:items-start sm:p-6"
+      className="pointer-events-none fixed inset-0 z-[9999] flex items-end px-4 py-6 sm:items-start sm:p-6"
       aria-live="polite"
       aria-atomic="true"
     >
