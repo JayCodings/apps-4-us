@@ -1,0 +1,226 @@
+services:
+  proxy:
+    image: nginxproxy/nginx-proxy:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./etc/nginx/certs:/etc/nginx/certs
+    networks:
+      - project-network
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+      TZ: ${TIMEZONE}
+      VIRTUAL_HOST: ${MYSQL_URL}
+    ports:
+      - '3306:3306'
+    volumes:
+      - 'db_data:/var/lib/mysql'
+    networks:
+      project-network:
+        aliases:
+          - '${MYSQL_URL}'
+
+  phpmyadmin:
+    depends_on:
+      - db
+    environment:
+      PMA_ABSOLUTE_URI: 'https://${PHP_MY_ADMIN_URL}'
+      PMA_ARBITRARY: 1
+      UPLOAD_LIMIT: '10M'
+      VIRTUAL_HOST: ${PHP_MY_ADMIN_URL}
+    expose:
+      - 80
+    image: phpmyadmin/phpmyadmin:5.2
+    #    volumes:
+    #      - './infrastructure/etc/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php'
+    networks:
+      project-network:
+        aliases:
+          - '${PHP_MY_ADMIN_URL}'
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE}
+    ports:
+      - '6379:6379'
+    volumes:
+      - 'redis_data:/data'
+    networks:
+      project-network:
+        aliases:
+          - '${REDIS_URL}'
+
+  redisinsight:
+    image: redislabs/redisinsight:latest
+    restart: unless-stopped
+    environment:
+      RITRUSTEDORIGINS: 'https://${REDIS_INSIGHT_URL}'
+      VIRTUAL_HOST: ${REDIS_INSIGHT_URL}
+      VIRTUAL_PORT: 5540
+      PROJECT_NAME: ${PROJECT_NAME}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+    depends_on:
+      - redis
+    networks:
+      project-network:
+        aliases:
+          - '${REDIS_INSIGHT_URL}'
+    expose:
+      - 5540
+    volumes:
+      - 'redisinsight_data:/db'
+
+  inbucket:
+    image: inbucket/inbucket:latest
+    restart: unless-stopped
+    environment:
+      VIRTUAL_HOST: ${MAIL_URL}
+      VIRTUAL_PORT: 9000
+      INBUCKET_WEB_ADDR: 0.0.0.0:9000
+      INBUCKET_SMTP_ADDR: 0.0.0.0:2500
+      INBUCKET_POP3_ADDR: 0.0.0.0:1100
+    expose:
+      - 9000
+      - 2500
+      - 1100
+    networks:
+      project-network:
+        aliases:
+          - '${MAIL_URL}'
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    entrypoint: /docker-entrypoint.sh
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      VIRTUAL_HOST: ${MINIO_URL}
+      VIRTUAL_PORT: 9000
+    expose:
+      - 9000
+    ports:
+      - "9001:9001"
+    volumes:
+      - './etc/minio/docker-entrypoint.sh:/docker-entrypoint.sh'
+      - 'minio_data:/data'
+    networks:
+      project-network:
+        aliases:
+          - '${MINIO_URL}'
+
+  backend:
+    build:
+      context: .
+      dockerfile: etc/backend/Dockerfile.dev
+      args:
+        UID: ${CONTAINER_UID:-1000}
+        GID: ${CONTAINER_GID:-1000}
+    restart: unless-stopped
+    environment:
+      VIRTUAL_HOST: ${BE_URL}
+      LETSENCRYPT_HOST: ${BE_URL}
+      APP_NAME: ${PROJECT_NAME}
+      APP_ENV: ${APP_ENV}
+      APP_KEY: ${APP_KEY}
+      APP_DEBUG: ${APP_DEBUG}
+      APP_URL: https://${BE_URL}
+      FRONTEND_URL: https://${FE_URL}
+      APP_LOCALE: ${APP_LOCALE}
+      APP_FALLBACK_LOCALE: ${APP_FALLBACK_LOCALE}
+      APP_FAKER_LOCALE: ${APP_FAKER_LOCALE}
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${MYSQL_DB}
+      DB_USERNAME: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      CACHE_DRIVER: ${CACHE_DRIVER}
+      SESSION_DRIVER: ${SESSION_DRIVER}
+      SESSION_LIFETIME: ${SESSION_LIFETIME}
+      SESSION_DOMAIN: ${SESSION_DOMAIN}
+      QUEUE_CONNECTION: ${QUEUE_CONNECTION}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PORT: ${REDIS_PORT}
+      SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS}
+      HORIZON_PREFIX: ${HORIZON_PREFIX}
+      HORIZON_MEMORY_LIMIT: ${HORIZON_MEMORY_LIMIT}
+      MAIL_MAILER: ${MAIL_MAILER}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_ENCRYPTION: ${MAIL_ENCRYPTION}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME}
+      EMAIL_VERIFICATION_REQUIRED: ${EMAIL_VERIFICATION_REQUIRED}
+      FILESYSTEM_DISK: ${FILESYSTEM_DISK}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+      AWS_BUCKET: ${AWS_BUCKET}
+      AWS_ENDPOINT: ${AWS_ENDPOINT}
+      AWS_USE_PATH_STYLE_ENDPOINT: ${AWS_USE_PATH_STYLE_ENDPOINT}
+      TIMEZONE: ${TIMEZONE}
+      TZ: ${TIMEZONE}
+    volumes:
+      - ./backend:/var/www/html
+    networks:
+      - project-network
+    depends_on:
+      - db
+      - redis
+      - minio
+    expose:
+      - 80
+
+  frontend:
+    build:
+      context: .
+      dockerfile: etc/frontend/Dockerfile.dev
+      args:
+        UID: ${CONTAINER_UID:-1000}
+        GID: ${CONTAINER_GID:-1000}
+    restart: unless-stopped
+    environment:
+      VIRTUAL_HOST: ${FE_URL}
+      LETSENCRYPT_HOST: ${FE_URL}
+      NEXT_PUBLIC_BACKEND_URL: https://${BE_URL}
+      NEXT_PUBLIC_EMAIL_VERIFICATION_REQUIRED: ${EMAIL_VERIFICATION_REQUIRED}
+      NEXT_PUBLIC_APP_NAME: ${PROJECT_NAME}
+    volumes:
+      - ./frontend:/app
+    networks:
+      - project-network
+    depends_on:
+      - backend
+    expose:
+      - 3000
+
+networks:
+  project-network:
+    name: ${DOCKER_NETWORK_NAME}
+    driver: bridge
+
+volumes:
+  db_data:
+  redis_data:
+  redisinsight_data:
+  minio_data:

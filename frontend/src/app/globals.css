@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+:root {
+  --background: #36393F;
+  --foreground: #F2F3F5;
+
+  /* Discord Color Palette */
+  --discord-serverbar: #1E1F22;
+  --discord-channelbar: #2B2D31;
+  --discord-chat: #36393F;
+  --discord-primary: #2C2D32;
+  --discord-card: #414248;
+  --discord-input: #28292E;
+  --discord-dark: #323339;
+  --discord-darker: #2C2D32;
+  --discord-darkest: #28292E;
+  --discord-light: #383A40;
+  --discord-lighter: #4E5058;
+  --discord-hover: #35373C;
+  --discord-active: #404249;
+  --discord-modifier-hover: #393C43;
+  --discord-modifier-selected: #404249;
+  --discord-modifier-accent: #4E5058;
+  --discord-blurple: #5865F2;
+  --discord-blurple-hover: #4752C4;
+  --discord-green: #23A55A;
+  --discord-gray: #80848E;
+  --discord-text-normal: #F2F3F5;
+  --discord-text-muted: #949BA4;
+  --discord-text-link: #7BB0F5;
+  --discord-text-header: #F2F3F5;
+  --discord-danger: #DA3E44;
+  --discord-danger-bg: #49353D;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Discord Colors */
+  --color-discord-serverbar: var(--discord-serverbar);
+  --color-discord-channelbar: var(--discord-channelbar);
+  --color-discord-chat: var(--discord-chat);
+  --color-discord-primary: var(--discord-primary);
+  --color-discord-card: var(--discord-card);
+  --color-discord-input: var(--discord-input);
+  --color-discord-dark: var(--discord-dark);
+  --color-discord-darker: var(--discord-darker);
+  --color-discord-darkest: var(--discord-darkest);
+  --color-discord-light: var(--discord-light);
+  --color-discord-lighter: var(--discord-lighter);
+  --color-discord-hover: var(--discord-hover);
+  --color-discord-active: var(--discord-active);
+  --color-discord-modifier-hover: var(--discord-modifier-hover);
+  --color-discord-modifier-selected: var(--discord-modifier-selected);
+  --color-discord-modifier-accent: var(--discord-modifier-accent);
+  --color-discord-blurple: var(--discord-blurple);
+  --color-discord-blurple-hover: var(--discord-blurple-hover);
+  --color-discord-green: var(--discord-green);
+  --color-discord-gray: var(--discord-gray);
+  --color-discord-text-normal: var(--discord-text-normal);
+  --color-discord-text-muted: var(--discord-text-muted);
+  --color-discord-text-link: var(--discord-text-link);
+  --color-discord-text-header: var(--discord-text-header);
+  --color-discord-danger: var(--discord-danger);
+  --color-discord-danger-bg: var(--discord-danger-bg);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--discord-darker);
+  color: #F2F3F5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+}
+
+input::placeholder {
+  color: #949BA4;
+  opacity: 1;
+}
+
+/* Toast Animation */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}

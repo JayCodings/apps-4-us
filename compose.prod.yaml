@@ -1,0 +1,7 @@
+# Production override - use this with: docker compose -f compose.yaml -f compose.prod.yaml up
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: etc/frontend/Dockerfile
+    volumes: []  # No volumes in production, use built image

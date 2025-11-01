@@ -1,0 +1,22 @@
+# Development Dockerfile with hot-reload
+FROM node:20-alpine
+
+# Accept UID and GID as build arguments
+ARG UID=1000
+ARG GID=1000
+
+WORKDIR /app
+
+# The node:20-alpine image already has:
+# - 'node' user with UID=1000 and GID=1000
+# - yarn pre-installed
+
+# Switch to node user (UID 1000 matches host user)
+USER node
+
+# Expose port
+EXPOSE 3000
+
+# Start development server
+# Dependencies will be installed on first run via volume mount
+CMD ["sh", "-c", "yarn install && yarn dev"]
