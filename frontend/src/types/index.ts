@@ -114,6 +114,7 @@ export interface Project {
       view: AuthorizationResponse
       update: AuthorizationResponse
       delete: AuthorizationResponse
+      create_webhooks: AuthorizationResponse
     }
   }
 }

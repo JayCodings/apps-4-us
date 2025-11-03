@@ -34,8 +34,8 @@ class ProjectPolicy
 
         $context = $user->getFeatureContext($type->value);
 
-        if ($context && isset($context['max-projects'])) {
-            $maxProjects = (int) $context['max-projects'];
+        if ($context) {
+            $maxProjects = (int) ($context['max-projects'] ?? config('projects.max_projects_per_type'));
             $currentCount = $user->projects()
                 ->wherePivot("role", ProjectRoleEnum::Owner->value)
                 ->where('type', $type->value)

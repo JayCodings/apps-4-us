@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\User;
+namespace App\Http\Controllers\Projects;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateProjectRequest;
@@ -22,6 +22,7 @@ class UpdateProjectController extends Controller
         $validated = $request->validated();
 
         $dto = new ProjectDto(
+            type: $project->type,
             name: $validated['name'],
             description: $validated['description'] ?? null
         );

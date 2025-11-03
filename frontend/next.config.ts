@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
 
   // Fix for cross-origin requests in dev mode
-  allowedDevOrigins: ['app.project-name.localhost'],
+  allowedDevOrigins: ['app.apps-4-us.localhost'],
 
   // Optimize for Docker environment
   webpack: (config, { isServer }) => {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Policies\ProjectPolicy;
+use App\Policies\WebhookRoutePolicy;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -29,11 +30,13 @@ class ProjectResource extends JsonResource
         if ($user) {
             $data["role"] = $this->users()->where("user_id", $user->id)->first()?->pivot?->role;
             $policy = app(ProjectPolicy::class);
+            $webhookPolicy = app(WebhookRoutePolicy::class);
             $data["permissions"] = [
                 "can" => [
                     "view" => $policy->view($user, $this->resource)->toArray(),
                     "update" => $policy->update($user, $this->resource)->toArray(),
                     "delete" => $policy->delete($user, $this->resource)->toArray(),
+                    "create_webhooks" => $webhookPolicy->create($user, $this->resource)->toArray(),
                 ],
             ];
         }

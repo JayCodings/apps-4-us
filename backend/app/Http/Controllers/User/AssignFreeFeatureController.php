@@ -27,7 +27,10 @@ class AssignFreeFeatureController extends Controller
         $feature = Feature::where('name', $validated['feature'])->firstOrFail();
 
         $user->features()->attach($feature->id, [
-            'context' => json_encode(['max-projects' => 1]),
+            'context' => json_encode([
+                'max-projects' => config('projects.max_projects_per_type'),
+                'max-webhooks' => config('projects.webhooks.limit_per_project'),
+            ]),
         ]);
 
         $user->load('features');

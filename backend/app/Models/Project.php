@@ -7,6 +7,7 @@ namespace App\Models;
 use Components\Projects\Enums\ProjectTypeEnum;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property string $id
@@ -15,6 +16,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property ProjectTypeEnum $type
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
+ *
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, User> $users
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, WebhookRoute> $webhookRoutes
  */
 class Project extends BaseModel
 {
@@ -34,5 +38,10 @@ class Project extends BaseModel
     public function owner(): BelongsToMany
     {
         return $this->users()->wherePivot('role', 'owner');
+    }
+
+    public function webhookRoutes(): HasMany
+    {
+        return $this->hasMany(WebhookRoute::class);
     }
 }

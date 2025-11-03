@@ -43,15 +43,15 @@ export function SlidePanelProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const open = useCallback((panelId: string) => {
-    if (!registry[panelId]) {
-      console.warn(`Panel "${panelId}" is not registered`);
-      return;
-    }
-
     const url = new URL(window.location.href);
     url.searchParams.set("panel", panelId);
     window.history.pushState({}, "", url.toString());
-    setCurrentPanelId(panelId);
+
+    if (registry[panelId]) {
+      setCurrentPanelId(panelId);
+    } else {
+      console.warn(`Panel "${panelId}" is not registered yet. Will open when registered.`);
+    }
   }, [registry]);
 
   const close = useCallback(() => {

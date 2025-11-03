@@ -178,6 +178,17 @@ services:
       AWS_BUCKET: ${AWS_BUCKET}
       AWS_ENDPOINT: ${AWS_ENDPOINT}
       AWS_USE_PATH_STYLE_ENDPOINT: ${AWS_USE_PATH_STYLE_ENDPOINT}
+      BROADCAST_CONNECTION: ${BROADCAST_CONNECTION}
+      REVERB_APP_ID: ${REVERB_APP_ID}
+      REVERB_APP_KEY: ${REVERB_APP_KEY}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET}
+      REVERB_HOST: reverb
+      REVERB_PORT: 8080
+      REVERB_SCHEME: http
+      WEBHOOK_RATE_LIMIT_DEFAULT: ${WEBHOOK_RATE_LIMIT_DEFAULT}
+      WEBHOOK_MAX_REQUEST_SIZE_KB: ${WEBHOOK_MAX_REQUEST_SIZE_KB}
+      MAX_PROJECTS_PER_TYPE: ${MAX_PROJECTS_PER_TYPE}
+      MAX_WEBHOOKS_PER_PROJECT: ${MAX_WEBHOOKS_PER_PROJECT}
       TIMEZONE: ${TIMEZONE}
       TZ: ${TIMEZONE}
     volumes:
@@ -190,6 +201,51 @@ services:
       - minio
     expose:
       - 80
+
+  reverb:
+    build:
+      context: .
+      dockerfile: etc/backend/Dockerfile.dev
+      args:
+        UID: ${CONTAINER_UID:-1000}
+        GID: ${CONTAINER_GID:-1000}
+    restart: unless-stopped
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    environment:
+      VIRTUAL_HOST: ${REVERB_URL}
+      VIRTUAL_PORT: 8080
+      APP_NAME: ${PROJECT_NAME}
+      APP_ENV: ${APP_ENV}
+      APP_KEY: ${APP_KEY}
+      APP_DEBUG: ${APP_DEBUG}
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${MYSQL_DB}
+      DB_USERNAME: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PORT: ${REDIS_PORT}
+      BROADCAST_CONNECTION: ${BROADCAST_CONNECTION}
+      REVERB_APP_ID: ${REVERB_APP_ID}
+      REVERB_APP_KEY: ${REVERB_APP_KEY}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET}
+      REVERB_HOST: 0.0.0.0
+      REVERB_PORT: 8080
+      REVERB_SCHEME: http
+      REVERB_ALLOWED_ORIGINS: "https://${FE_URL}"
+      TIMEZONE: ${TIMEZONE}
+      TZ: ${TIMEZONE}
+    volumes:
+      - ./backend:/var/www/html
+    networks:
+      - project-network
+    depends_on:
+      - db
+      - redis
+    expose:
+      - 8080
 
   frontend:
     build:
@@ -205,6 +261,12 @@ services:
       NEXT_PUBLIC_BACKEND_URL: https://${BE_URL}
       NEXT_PUBLIC_EMAIL_VERIFICATION_REQUIRED: ${EMAIL_VERIFICATION_REQUIRED}
       NEXT_PUBLIC_APP_NAME: ${PROJECT_NAME}
+      NEXT_PUBLIC_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY}
+      NEXT_PUBLIC_REVERB_HOST: ${VITE_REVERB_HOST}
+      NEXT_PUBLIC_REVERB_PORT: ${VITE_REVERB_PORT}
+      NEXT_PUBLIC_REVERB_SCHEME: ${VITE_REVERB_SCHEME}
+      NEXT_PUBLIC_WEBHOOK_RATE_LIMIT_DEFAULT: ${WEBHOOK_RATE_LIMIT_DEFAULT}
+      NEXT_PUBLIC_WEBHOOK_MAX_REQUEST_SIZE_KB: ${WEBHOOK_MAX_REQUEST_SIZE_KB}
     volumes:
       - ./frontend:/app
     networks:
