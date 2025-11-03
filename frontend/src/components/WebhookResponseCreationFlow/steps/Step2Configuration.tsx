@@ -124,9 +124,9 @@ export function Step2Configuration({ type, onSubmit, isLoading }: Step2Configura
               <button
                 type="button"
                 onClick={addHeader}
-                className="flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+                className="flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 transition-colors group"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
                 Add Header
               </button>
             </div>

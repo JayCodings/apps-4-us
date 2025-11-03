@@ -1,25 +1,27 @@
 import useSWR from 'swr';
 import { webhooksApi } from '@/lib/api/webhooks';
-import type { WebhookLog } from '@/types/webhook';
+import type { WebhookLog, PaginatedResponse } from '@/types/webhook';
 
-export function useWebhookLogs(routeId: string) {
+export function useWebhookLogs(routeId: string, page: number = 1, enableAutoRefresh: boolean = false) {
   const {
-    data: logs,
+    data,
     error,
     mutate,
     isLoading,
-  } = useSWR<WebhookLog[]>(
-    routeId ? `/webhook-routes/${routeId}/logs` : null,
-    () => webhooksApi.getLogs(routeId),
+  } = useSWR<PaginatedResponse<WebhookLog>>(
+    routeId ? `/webhook-routes/${routeId}/logs?page=${page}` : null,
+    () => webhooksApi.getLogs(routeId, page),
     {
       revalidateOnFocus: false,
       revalidateOnMount: true,
-      refreshInterval: 5000, // Auto-refresh every 5 seconds
+      refreshInterval: enableAutoRefresh ? 5000 : 0,
     }
   );
 
   return {
-    logs,
+    logs: data?.data || [],
+    meta: data?.meta,
+    links: data?.links,
     isLoading,
     error,
     refresh: mutate,

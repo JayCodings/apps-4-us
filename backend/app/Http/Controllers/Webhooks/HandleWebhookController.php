@@ -23,6 +23,9 @@ class HandleWebhookController extends Controller
         WebhookExecutorService $executorService,
         WebhookLoggerService $loggerService
     ): Response {
+        $startTime = microtime(true);
+        $requestIp = $request->ip();
+
         $method = WebhookMethodEnum::from($request->method());
         $route = $routeService->findRouteByUuid($uuid, $method);
 
@@ -32,10 +35,13 @@ class HandleWebhookController extends Controller
 
         // Check if the route owner has the webhook-proxy feature
         if (!$route->user->hasFeature('webhook-proxy')) {
+            $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
             $log = $loggerService->logRequest(
                 route: $route,
                 request: $request,
-                error: 'User does not have webhook-proxy feature'
+                error: 'User does not have webhook-proxy feature',
+                requestIp: $requestIp,
+                responseTimeMs: $responseTimeMs
             );
 
             event(new WebhookReceivedEvent($route->user_id, $route->project_id, $route->id, $log->id));
@@ -44,10 +50,13 @@ class HandleWebhookController extends Controller
         }
 
         if (!$route->active_response_id) {
+            $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
             $log = $loggerService->logRequest(
                 route: $route,
                 request: $request,
-                error: 'No active response configured'
+                error: 'No active response configured',
+                requestIp: $requestIp,
+                responseTimeMs: $responseTimeMs
             );
 
             event(new WebhookReceivedEvent($route->user_id, $route->project_id, $route->id, $log->id));
@@ -58,10 +67,13 @@ class HandleWebhookController extends Controller
         $activeResponse = WebhookResponse::find($route->active_response_id);
 
         if (!$activeResponse) {
+            $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
             $log = $loggerService->logRequest(
                 route: $route,
                 request: $request,
-                error: 'Active response not found'
+                error: 'Active response not found',
+                requestIp: $requestIp,
+                responseTimeMs: $responseTimeMs
             );
 
             event(new WebhookReceivedEvent($route->user_id, $route->project_id, $route->id, $log->id));
@@ -72,12 +84,15 @@ class HandleWebhookController extends Controller
         try {
             $result = $executorService->execute($activeResponse, $request);
 
+            $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
             $log = $loggerService->logRequest(
                 route: $route,
                 request: $request,
                 responseStatus: $result['status'],
                 responseHeaders: $result['headers'],
-                responseBody: $result['body']
+                responseBody: $result['body'],
+                requestIp: $requestIp,
+                responseTimeMs: $responseTimeMs
             );
 
             event(new WebhookReceivedEvent($route->user_id, $route->project_id, $route->id, $log->id));
@@ -85,10 +100,13 @@ class HandleWebhookController extends Controller
             return response($result['body'], $result['status'])
                 ->withHeaders($result['headers']);
         } catch (\Exception $e) {
+            $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
             $log = $loggerService->logRequest(
                 route: $route,
                 request: $request,
-                error: $e->getMessage()
+                error: $e->getMessage(),
+                requestIp: $requestIp,
+                responseTimeMs: $responseTimeMs
             );
 
             event(new WebhookReceivedEvent($route->user_id, $route->project_id, $route->id, $log->id));

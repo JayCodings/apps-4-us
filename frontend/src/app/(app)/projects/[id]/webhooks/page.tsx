@@ -9,9 +9,14 @@ import { useProjectContext } from '@/contexts/ProjectContext';
 import { WebhookRouteCard } from '@/components/webhooks/WebhookRouteCard';
 import { CreateWebhookRoutePanel } from '@/components/webhooks/CreateWebhookRoutePanel';
 import { EditWebhookRoutePanel } from '@/components/webhooks/EditWebhookRoutePanel';
+import { WebhookLogsPanel } from '@/components/webhooks/WebhookLogsPanel';
+import { WebhookResponsesPanel } from '@/components/webhooks/WebhookResponsesPanel';
 import { WebhookResponseCreationFlow } from '@/components/WebhookResponseCreationFlow';
+import { EditWebhookResponseModal } from '@/components/webhooks/EditWebhookResponseModal';
+import { useWebhookResponses } from '@/hooks/useWebhookResponses';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
+import type { WebhookResponse } from '@/types/webhook';
 
 export default function WebhooksPage() {
   const params = useParams();
@@ -25,26 +30,58 @@ export default function WebhooksPage() {
   const [showCreateResponseModal, setShowCreateResponseModal] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
 
+  const [showEditResponseModal, setShowEditResponseModal] = useState(false);
+  const [selectedResponseId, setSelectedResponseId] = useState<string | null>(null);
+  const [editRouteId, setEditRouteId] = useState<string | null>(null);
+
   const canCreateWebhooks = project?.permissions?.can?.create_webhooks?.allowed ?? false;
   const createWebhooksMessage = project?.permissions?.can?.create_webhooks?.message;
+
+  const { responses: editResponses } = useWebhookResponses(editRouteId || '', 1);
+  const responseToEdit = editResponses?.find(r => r.id === selectedResponseId);
 
   useEffect(() => {
     const action = searchParams.get('action');
     const routeId = searchParams.get('routeId');
+    const responseId = searchParams.get('responseId');
 
     if (action === 'create-webhook-response' && routeId) {
       setSelectedRouteId(routeId);
       setShowCreateResponseModal(true);
+    } else if (action === 'edit-webhook-response' && responseId && routeId) {
+      setSelectedResponseId(responseId);
+      setEditRouteId(routeId);
+      setShowEditResponseModal(true);
     }
   }, [searchParams]);
 
   const handleCloseModal = () => {
+    const routeId = selectedRouteId;
     setShowCreateResponseModal(false);
     setSelectedRouteId(null);
 
     const params = new URLSearchParams(searchParams.toString());
     params.delete('action');
     params.delete('routeId');
+
+    if (routeId) {
+      params.set('panel', `responses-${routeId}`);
+    }
+
+    const newSearch = params.toString();
+    router.replace(newSearch ? `/projects/${projectId}/webhooks?${newSearch}` : `/projects/${projectId}/webhooks`);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditResponseModal(false);
+    setSelectedResponseId(null);
+    setEditRouteId(null);
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('action');
+    params.delete('responseId');
+    params.delete('routeId');
+
     const newSearch = params.toString();
     router.replace(newSearch ? `/projects/${projectId}/webhooks?${newSearch}` : `/projects/${projectId}/webhooks`);
   };
@@ -61,6 +98,14 @@ export default function WebhooksPage() {
       panelConfig[`edit-${route.id}`] = {
         title: route.name,
         content: <EditWebhookRoutePanel routeId={route.id} projectId={projectId} />,
+      };
+      panelConfig[`logs-${route.id}`] = {
+        title: `${route.name} - Logs`,
+        content: <WebhookLogsPanel routeId={route.id} routeName={route.name} />,
+      };
+      panelConfig[`responses-${route.id}`] = {
+        title: `${route.name} - Responses`,
+        content: <WebhookResponsesPanel routeId={route.id} routeName={route.name} />,
       };
     });
 
@@ -95,9 +140,9 @@ export default function WebhooksPage() {
           onClick={() => open('createWebhookRoute')}
           disabled={!canCreateWebhooks}
           title={!canCreateWebhooks ? createWebhooksMessage : undefined}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600"
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600 group"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
           Create Route
         </button>
       </motion.div>
@@ -131,6 +176,14 @@ export default function WebhooksPage() {
         <WebhookResponseCreationFlow
           routeId={selectedRouteId}
           onClose={handleCloseModal}
+        />
+      )}
+
+      {showEditResponseModal && editRouteId && responseToEdit && (
+        <EditWebhookResponseModal
+          response={responseToEdit}
+          routeId={editRouteId}
+          onClose={handleCloseEditModal}
         />
       )}
     </div>

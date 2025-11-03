@@ -15,9 +15,14 @@ class GetWebhookResponsesController extends Controller
 {
     public function __invoke(WebhookRoute $webhookRoute, Request $request): AnonymousResourceCollection
     {
+        $request->validate([
+            'page' => 'nullable|integer|min:1',
+        ]);
+
         $responses = WebhookResponse::query()
             ->where('route_id', $webhookRoute->id)
-            ->get();
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
 
         return WebhookResponseResource::collection($responses);
     }

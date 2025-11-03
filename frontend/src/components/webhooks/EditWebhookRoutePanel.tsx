@@ -1,20 +1,15 @@
 'use client';
 
 import { useWebhooks } from '@/hooks/useWebhooks';
-import { useWebhookResponses } from '@/hooks/useWebhookResponses';
-import { useWebhookLogs } from '@/hooks/useWebhookLogs';
 import { useSlidePanel } from '@/hooks/useSlidePanel';
 import { useConfirmModal } from '@/contexts/ConfirmModalContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useProjects } from '@/hooks/useProjects';
 import { useProjectContext } from '@/contexts/ProjectContext';
-import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Settings, FileText, Activity, Copy, Check, AlertCircle, Plus } from 'lucide-react';
+import { Copy, Check, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { WebhookRouteForm } from '@/components/webhooks/WebhookRouteForm';
-
-type TabType = 'settings' | 'responses' | 'logs';
 
 interface EditWebhookRoutePanelProps {
   routeId: string;
@@ -23,16 +18,12 @@ interface EditWebhookRoutePanelProps {
 
 export function EditWebhookRoutePanel({ routeId, projectId }: EditWebhookRoutePanelProps) {
   const { routes, updateRoute, deleteRoute, toggleRouteActive } = useWebhooks(projectId);
-  const { responses, deleteResponse, activateResponse } = useWebhookResponses(routeId);
-  const { logs } = useWebhookLogs(routeId);
   const { close } = useSlidePanel();
   const { showConfirm } = useConfirmModal();
   const { showToast } = useToast();
   const { getProject } = useProjects();
   const { setProject } = useProjectContext();
-  const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<TabType>('settings');
   const [isLoading, setIsLoading] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -110,12 +101,6 @@ export function EditWebhookRoutePanel({ routeId, projectId }: EditWebhookRoutePa
     );
   }
 
-  const tabs = [
-    { id: 'settings' as TabType, label: 'Settings', icon: Settings },
-    { id: 'responses' as TabType, label: 'Responses', icon: FileText },
-    { id: 'logs' as TabType, label: 'Logs', icon: Activity },
-  ];
-
   return (
     <div className="flex flex-col h-full">
       <div className="p-6 border-b border-discord-dark">
@@ -192,254 +177,23 @@ export function EditWebhookRoutePanel({ routeId, projectId }: EditWebhookRoutePa
         </div>
       </div>
 
-      <div className="border-b border-discord-dark px-6">
-        <div className="flex gap-6">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 py-3 border-b-2 transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? 'border-indigo-500 text-indigo-400'
-                    : 'border-transparent text-discord-text-muted hover:text-discord-text-normal'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="font-medium">{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto p-6">
         <motion.div
-          key={activeTab}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="p-6"
         >
-          {activeTab === 'settings' && (
-            <div>
-              <div className="bg-discord-card rounded-xl border border-discord-dark p-6 mb-6">
-                <h3 className="text-xl font-semibold text-discord-text-normal mb-4">
-                  Route Settings
-                </h3>
-                <WebhookRouteForm
-                  initialData={route}
-                  onSubmit={handleUpdateRoute}
-                  isLoading={isLoading}
-                  disabled={!route.permissions?.can.update.allowed}
-                />
-              </div>
-
-              {route.permissions?.can.delete.allowed && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.1 }}
-                  className="pt-8 border-t border-discord-dark"
-                >
-                  <h2 className="text-xl font-bold text-discord-text-normal mb-2">
-                    Danger Zone
-                  </h2>
-                  <p className="text-discord-text-muted mb-4">
-                    Once you delete a webhook route, there is no going back. Please be certain.
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={handleDeleteRoute}
-                    className="px-6 py-3 bg-red-600/10 text-red-400 border border-red-600/50 rounded-md font-medium hover:bg-red-600/20 transition-all active:scale-95 cursor-pointer"
-                  >
-                    Delete Webhook Route
-                  </button>
-                </motion.div>
-              )}
-
-              {!route.permissions?.can.delete.allowed && route.permissions?.can.update.allowed && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.1 }}
-                  className="pt-8 border-t border-discord-dark"
-                >
-                  <div className="bg-yellow-500/10 border border-yellow-500/50 rounded-md p-4">
-                    <p className="text-yellow-400 text-sm">
-                      {route.permissions?.can.delete.message || "You don't have permission to delete this webhook route."}
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'responses' && (
-            <div className="bg-discord-card rounded-xl border border-discord-dark p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-discord-text-normal">
-                  Webhook Responses
-                </h3>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-discord-text-muted">
-                    {responses?.length || 0} Response(s)
-                  </span>
-                  {route.permissions?.can.create_responses.allowed ? (
-                    <button
-                      onClick={() => router.push(`/projects/${projectId}/webhooks?action=create-webhook-response&routeId=${routeId}`)}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-all active:scale-95"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Create Response
-                    </button>
-                  ) : (
-                    <div className="group relative">
-                      <button
-                        disabled
-                        title={route.permissions?.can.create_responses.message}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600/50 text-white/50 rounded-md font-medium cursor-not-allowed"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Create Response
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {responses && responses.length === 0 ? (
-                <div className="text-center py-12 bg-discord-dark rounded-lg border-2 border-dashed border-discord-dark">
-                  <p className="text-discord-text-muted">No responses yet.</p>
-                  <p className="text-discord-text-muted opacity-70 text-sm mt-1">
-                    Create a response to get started.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {responses?.map((response) => (
-                    <div
-                      key={response.id}
-                      className="p-4 border border-discord-dark rounded-lg hover:border-discord-lighter transition-colors duration-200"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="font-medium text-discord-text-normal">{response.name}</span>
-                            {response.id === route.active_response_id && (
-                              <span className="px-2 py-1 bg-discord-green/20 text-discord-green text-xs rounded-full font-medium">
-                                Active
-                              </span>
-                            )}
-                            <span className="px-2 py-1 bg-indigo-500/20 text-indigo-400 text-xs rounded font-medium">
-                              {response.type}
-                            </span>
-                          </div>
-                          <p className="text-sm text-discord-text-muted">
-                            Status: {response.status_code}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          {response.id !== route.active_response_id &&
-                           response.permissions?.can.activate.allowed && (
-                            <button
-                              onClick={() => activateResponse(response.id)}
-                              className="px-3 py-1 text-sm text-indigo-400 hover:bg-indigo-500/20 rounded transition-colors duration-200"
-                            >
-                              Activate
-                            </button>
-                          )}
-                          {response.permissions?.can.delete.allowed ? (
-                            <button
-                              onClick={() => deleteResponse(response.id)}
-                              className="px-3 py-1 text-sm text-red-400 hover:bg-red-500/20 rounded transition-colors duration-200"
-                            >
-                              Delete
-                            </button>
-                          ) : (
-                            <button
-                              disabled
-                              title={response.permissions?.can.delete.message}
-                              className="px-3 py-1 text-sm text-red-400/50 rounded cursor-not-allowed"
-                            >
-                              Delete
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'logs' && (
-            <div className="bg-discord-card rounded-xl border border-discord-dark p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-discord-text-normal">
-                  Request Logs
-                </h3>
-                <span className="text-sm text-discord-text-muted">
-                  {logs?.length || 0} Log(s)
-                </span>
-              </div>
-
-              {logs && logs.length === 0 ? (
-                <div className="text-center py-12 bg-discord-dark rounded-lg border-2 border-dashed border-discord-dark">
-                  <p className="text-discord-text-muted">No logs yet.</p>
-                  <p className="text-discord-text-muted opacity-70 text-sm mt-1">
-                    Logs will appear here once requests are received.
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="border-b border-discord-dark">
-                      <tr>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-discord-text-muted">Time</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-discord-text-muted">Status</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-discord-text-muted">Method</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-discord-text-muted">IP</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-discord-text-muted">Response</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {logs?.map((log) => (
-                        <tr key={log.id} className="border-b border-discord-dark hover:bg-discord-hover transition-colors duration-150">
-                          <td className="py-3 px-4 text-sm text-discord-text-normal">
-                            {new Date(log.created_at).toLocaleString('de-DE')}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              log.response_status_code >= 200 && log.response_status_code < 300
-                                ? 'bg-discord-green/20 text-discord-green'
-                                : log.response_status_code >= 400
-                                ? 'bg-red-500/20 text-red-400'
-                                : 'bg-yellow-500/20 text-yellow-400'
-                            }`}>
-                              {log.response_status_code}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-sm text-discord-text-muted font-mono">
-                            {log.request_method}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-discord-text-muted font-mono">
-                            {log.request_ip}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-discord-text-muted">
-                            {log.response_time_ms}ms
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="bg-discord-dark rounded-xl border border-discord-dark p-6">
+            <h3 className="text-xl font-semibold text-discord-text-normal mb-4">
+              Route Settings
+            </h3>
+            <WebhookRouteForm
+              initialData={route}
+              onSubmit={handleUpdateRoute}
+              isLoading={isLoading}
+              disabled={!route.permissions?.can.update.allowed}
+            />
+          </div>
         </motion.div>
       </div>
     </div>

@@ -24,6 +24,7 @@ class WebhookRouteResource extends JsonResource
             'name' => $this->name,
             'method' => $this->method->value,
             'active_response_id' => $this->active_response_id,
+            'active_response' => $this->whenLoaded('activeResponse', fn () => new WebhookResponseResource($this->activeResponse)),
             'rate_limit_per_minute' => $this->rate_limit_per_minute,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at?->toISOString(),

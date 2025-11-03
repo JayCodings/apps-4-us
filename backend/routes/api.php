@@ -13,6 +13,7 @@ use App\Http\Controllers\Webhooks\CreateWebhookResponseController;
 use App\Http\Controllers\Webhooks\CreateWebhookRouteController;
 use App\Http\Controllers\Webhooks\DeleteWebhookResponseController;
 use App\Http\Controllers\Webhooks\DeleteWebhookRouteController;
+use App\Http\Controllers\Webhooks\GetProjectWebhookLogsController;
 use App\Http\Controllers\Webhooks\GetWebhookLogsController;
 use App\Http\Controllers\Webhooks\GetWebhookResponsesController;
 use App\Http\Controllers\Webhooks\GetWebhookRoutesController;
@@ -45,6 +46,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::middleware('feature:webhook-proxy')->group(function () {
         Route::get('/projects/{project}/webhook-routes', GetWebhookRoutesController::class)->middleware('can:view,project');
         Route::post('/projects/{project}/webhook-routes', CreateWebhookRouteController::class)->middleware('can:create,' . App\Models\WebhookRoute::class . ',project');
+        Route::get('/projects/{project}/webhook-logs', GetProjectWebhookLogsController::class)->middleware('can:view,project');
 
         Route::put('/webhook-routes/{webhookRoute}', UpdateWebhookRouteController::class)->middleware('can:update,webhookRoute');
         Route::delete('/webhook-routes/{webhookRoute}', DeleteWebhookRouteController::class)->middleware('can:delete,webhookRoute');

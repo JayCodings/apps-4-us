@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useRouter, usePathname } from "next/navigation";
 import { useActionModal } from "@/hooks/useActionModal";
-import { Hash, LayoutDashboard } from "lucide-react";
+import { Hash, LayoutDashboard, Plus } from "lucide-react";
 import type { Project, User } from "@/types";
 import { getProjectTypeConfig } from "@/config/projectTypes";
 
@@ -49,13 +49,13 @@ export function ProjectSwitcher({ projects, user, onProjectSelect }: ProjectSwit
       ))}
       <motion.button
         onClick={handleAddProject}
-        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-[#323339] cursor-pointer"
+        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-[#323339] cursor-pointer group"
         whileHover={{ backgroundColor: "#23A55A", scale: 0.9 }}
         whileTap={{ backgroundColor: "#1E8E4F", scale: 0.9 }}
         transition={{ duration: 0.15 }}
         aria-label="Add new project"
       >
-        <span className="text-xl text-green-500 transition-colors hover:text-white">+</span>
+        <Plus className="w-5 h-5 text-green-500 group-hover:text-white transition-all duration-300 group-hover:rotate-180" />
       </motion.button>
     </div>
   );

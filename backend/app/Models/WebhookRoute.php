@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property \Carbon\Carbon $updated_at
  * @property-read Project $project
  * @property-read User $user
+ * @property-read WebhookResponse|null $activeResponse
  * @property-read \Illuminate\Database\Eloquent\Collection<int, WebhookResponse> $responses
  * @property-read \Illuminate\Database\Eloquent\Collection<int, WebhookLog> $logs
  */
@@ -53,5 +54,10 @@ class WebhookRoute extends BaseModel
     public function logs(): HasMany
     {
         return $this->hasMany(WebhookLog::class, 'route_id');
+    }
+
+    public function activeResponse(): BelongsTo
+    {
+        return $this->belongsTo(WebhookResponse::class, 'active_response_id');
     }
 }

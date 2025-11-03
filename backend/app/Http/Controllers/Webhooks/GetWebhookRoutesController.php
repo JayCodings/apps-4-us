@@ -17,6 +17,7 @@ class GetWebhookRoutesController extends Controller
     {
         $routes = WebhookRoute::query()
             ->where('project_id', $project->id)
+            ->with('activeResponse')
             ->get();
 
         return WebhookRouteResource::collection($routes);

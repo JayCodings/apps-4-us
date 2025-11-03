@@ -3,6 +3,7 @@ import type {
   WebhookRoute,
   WebhookResponse,
   WebhookLog,
+  PaginatedResponse,
   CreateWebhookRouteData,
   UpdateWebhookRouteData,
   CreateWebhookResponseData,
@@ -36,13 +37,20 @@ export const webhooksApi = {
   },
 
   // Webhook Responses
-  getResponses: async (routeId: string) => {
-    const { data } = await axios.get<WebhookResponse[]>(`/api/webhook-routes/${routeId}/responses`);
+  getResponses: async (routeId: string, page: number = 1) => {
+    const { data } = await axios.get<PaginatedResponse<WebhookResponse>>(`/api/webhook-routes/${routeId}/responses`, {
+      params: { page },
+    });
     return data;
   },
 
   createResponse: async (routeId: string, payload: CreateWebhookResponseData) => {
     const { data } = await axios.post<WebhookResponse>(`/api/webhook-routes/${routeId}/responses`, payload);
+    return data;
+  },
+
+  getResponse: async (responseId: string) => {
+    const { data } = await axios.get<WebhookResponse>(`/api/webhook-responses/${responseId}`);
     return data;
   },
 
@@ -61,8 +69,17 @@ export const webhooksApi = {
   },
 
   // Webhook Logs
-  getLogs: async (routeId: string) => {
-    const { data} = await axios.get<WebhookLog[]>(`/api/webhook-routes/${routeId}/logs`);
+  getLogs: async (routeId: string, page: number = 1) => {
+    const { data } = await axios.get<PaginatedResponse<WebhookLog>>(`/api/webhook-routes/${routeId}/logs`, {
+      params: { page },
+    });
+    return data;
+  },
+
+  getProjectLogs: async (projectId: string, page: number = 1) => {
+    const { data } = await axios.get<PaginatedResponse<WebhookLog>>(`/api/projects/${projectId}/webhook-logs`, {
+      params: { page },
+    });
     return data;
   },
 };

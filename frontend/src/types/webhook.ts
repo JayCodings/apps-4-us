@@ -2,6 +2,24 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export type WebhookResponseType = 'static' | 'proxy';
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    current_page: number;
+    from: number | null;
+    last_page: number;
+    per_page: number;
+    to: number | null;
+    total: number;
+  };
+  links: {
+    first: string | null;
+    last: string | null;
+    prev: string | null;
+    next: string | null;
+  };
+}
+
 export interface WebhookRoute {
   id: string;
   project_id: string;
@@ -9,6 +27,7 @@ export interface WebhookRoute {
   name: string;
   method: HttpMethod;
   active_response_id: string | null;
+  active_response?: WebhookResponse | null;
   rate_limit_per_minute: number;
   is_active: boolean;
   created_at: string;
@@ -49,14 +68,19 @@ export interface WebhookResponse {
 export interface WebhookLog {
   id: string;
   route_id: string;
+  route?: WebhookRoute;
+  project_id: string;
   user_id: string;
   request_method: string;
   request_url: string;
-  request_headers: Record<string, any>;
+  request_headers: Record<string, string>;
   request_body: string | null;
+  request_ip: string | null;
   response_status: number | null;
-  response_headers: Record<string, any> | null;
+  response_headers: Record<string, string> | null;
   response_body: string | null;
+  response_type: 'static' | 'proxy' | null;
+  response_time_ms: number | null;
   error: string | null;
   created_at: string;
   updated_at: string;

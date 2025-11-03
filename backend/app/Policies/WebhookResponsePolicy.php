@@ -71,10 +71,6 @@ class WebhookResponsePolicy
             return Response::deny('Only the project owner can delete webhook responses.');
         }
 
-        if ($webhookResponse->route->active_response_id === $webhookResponse->id) {
-            return Response::deny('Cannot delete the active response. Please activate another response first.');
-        }
-
         return Response::allow();
     }
 
