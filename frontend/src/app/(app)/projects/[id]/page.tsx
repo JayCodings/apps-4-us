@@ -5,7 +5,7 @@ import { useProjectContext } from "@/contexts/ProjectContext";
 import { useSlidePanel } from "@/hooks/useSlidePanel";
 import { useSlidePanelRegistry } from "@/hooks/useSlidePanelRegistry";
 import { ManageProjectPanel } from "@/components/ManageProjectPanel";
-import { Edit } from "lucide-react";
+import { Settings } from "lucide-react";
 
 export default function ProjectOverview() {
   const { project } = useProjectContext();
@@ -48,9 +48,9 @@ export default function ProjectOverview() {
           {canUpdate && (
             <button
               onClick={() => open("manage")}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-all active:scale-95"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-all active:scale-95 group"
             >
-              <Edit className="w-4 h-4" />
+              <Settings className="w-4 h-4 transition-transform duration-300 group-hover:-rotate-180" />
               Manage Project
             </button>
           )}

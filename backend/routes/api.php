@@ -15,6 +15,7 @@ use App\Http\Controllers\Webhooks\DeleteWebhookResponseController;
 use App\Http\Controllers\Webhooks\DeleteWebhookRouteController;
 use App\Http\Controllers\Webhooks\GetProjectWebhookLogsController;
 use App\Http\Controllers\Webhooks\GetWebhookLogsController;
+use App\Http\Controllers\Webhooks\GetWebhookResponseController;
 use App\Http\Controllers\Webhooks\GetWebhookResponsesController;
 use App\Http\Controllers\Webhooks\GetWebhookRoutesController;
 use App\Http\Controllers\Webhooks\ToggleWebhookRouteActiveController;
@@ -56,6 +57,8 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::get('/webhook-routes/{webhookRoute}/responses', GetWebhookResponsesController::class);
         Route::post('/webhook-routes/{webhookRoute}/responses', CreateWebhookResponseController::class)
             ->middleware('can:create,' . App\Models\WebhookResponse::class . ',webhookRoute');
+        Route::get('/webhook-responses/{webhookResponse}', GetWebhookResponseController::class)
+            ->middleware('can:view,webhookResponse');
         Route::put('/webhook-responses/{webhookResponse}', UpdateWebhookResponseController::class)
             ->middleware('can:update,webhookResponse');
         Route::delete('/webhook-responses/{webhookResponse}', DeleteWebhookResponseController::class)

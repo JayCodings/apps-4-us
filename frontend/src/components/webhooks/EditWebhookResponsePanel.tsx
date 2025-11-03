@@ -1,43 +1,62 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Trash2, Plus } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Loader2, Trash2, Plus } from 'lucide-react';
 import { useWebhookResponses } from '@/hooks/useWebhookResponses';
+import { useWebhooks } from '@/hooks/useWebhooks';
 import { useToast } from '@/contexts/ToastContext';
+import { useSlidePanel } from '@/hooks/useSlidePanel';
+import { webhooksApi } from '@/lib/api/webhooks';
 import type { WebhookResponse } from '@/types/webhook';
 
-interface EditWebhookResponseModalProps {
-  response: WebhookResponse;
+interface EditWebhookResponsePanelProps {
+  responseId: string;
   routeId: string;
-  onClose: () => void;
+  projectId: string;
 }
 
-export function EditWebhookResponseModal({ response, routeId, onClose }: EditWebhookResponseModalProps) {
+export function EditWebhookResponsePanel({ responseId, routeId, projectId }: EditWebhookResponsePanelProps) {
   const { updateResponse } = useWebhookResponses(routeId);
+  const { refresh: refreshRoutes } = useWebhooks(projectId);
   const { showToast } = useToast();
+  const { close } = useSlidePanel();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [response, setResponse] = useState<WebhookResponse | null>(null);
 
-  const [name, setName] = useState(response.name);
-  const [statusCode, setStatusCode] = useState<string>(response.status_code?.toString() || '200');
-  const [headers, setHeaders] = useState<Array<{ key: string; value: string }>>(() => {
-    if (response.headers && Object.keys(response.headers).length > 0) {
-      return Object.entries(response.headers).map(([key, value]) => ({ key, value }));
-    }
-    return [{ key: 'Content-Type', value: 'application/json' }];
-  });
-  const [body, setBody] = useState(response.body || '');
-  const [proxyUrl, setProxyUrl] = useState(response.proxy_url || '');
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [name, setName] = useState('');
+  const [statusCode, setStatusCode] = useState<string>('200');
+  const [headers, setHeaders] = useState<Array<{ key: string; value: string }>>([{ key: 'Content-Type', value: 'application/json' }]);
+  const [body, setBody] = useState('');
+  const [proxyUrl, setProxyUrl] = useState('');
 
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+    const fetchResponse = async () => {
+      try {
+        setIsLoading(true);
+        const data = await webhooksApi.getResponse(responseId);
+        setResponse(data);
+        setName(data.name);
+        setStatusCode(data.status_code?.toString() || '200');
+        if (data.headers && Object.keys(data.headers).length > 0) {
+          setHeaders(Object.entries(data.headers).map(([key, value]) => ({ key, value })));
+        }
+        setBody(data.body || '');
+        setProxyUrl(data.proxy_url || '');
+      } catch (error) {
+        console.error('Failed to load response:', error);
+        showToast('Failed to load response', 'error');
+        close();
+      } finally {
+        setIsLoading(false);
+      }
     };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [onClose]);
+
+    fetchResponse();
+  }, [responseId, showToast, close]);
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const addHeader = () => {
     setHeaders([...headers, { key: '', value: '' }]);
@@ -111,9 +130,10 @@ export function EditWebhookResponseModal({ response, routeId, onClose }: EditWeb
         updateData.proxy_url = proxyUrl.trim();
       }
 
-      await updateResponse(response.id, updateData);
+      await updateResponse(responseId, updateData);
+      await refreshRoutes();
       showToast('Response updated successfully', 'success');
-      onClose();
+      close();
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Failed to update response';
       showToast(errorMessage, 'error');
@@ -123,46 +143,36 @@ export function EditWebhookResponseModal({ response, routeId, onClose }: EditWeb
     }
   };
 
+  if (isLoading || !response) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          onClick={onClose}
-        />
+    <div className="flex flex-col h-full">
+      <div className="p-6 border-b border-discord-dark">
+        <h2 className="text-2xl font-bold text-discord-text-normal mb-2">Edit Response</h2>
+        <p className="text-sm text-discord-text-muted">
+          Type: <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+            response.type === 'proxy'
+              ? 'bg-purple-400/10 text-purple-300 border border-purple-400/30'
+              : 'bg-blue-400/10 text-blue-300 border border-blue-400/30'
+          }`}>
+            {response.type.toUpperCase()}
+          </span>
+        </p>
+      </div>
 
+      <div className="flex-1 overflow-y-auto p-6">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.2 }}
-          className="relative z-10 w-full max-w-2xl mx-4 bg-discord-card border border-discord-dark rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
         >
-          <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b border-discord-dark bg-discord-card">
-            <div>
-              <h2 className="text-2xl font-bold text-discord-text-normal">Edit Response</h2>
-              <p className="text-sm text-discord-text-muted mt-1">
-                Type: <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                  response.type === 'proxy'
-                    ? 'bg-purple-400/10 text-purple-300 border border-purple-400/30'
-                    : 'bg-blue-400/10 text-blue-300 border border-blue-400/30'
-                }`}>
-                  {response.type.toUpperCase()}
-                </span>
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 text-discord-text-muted hover:text-discord-text-normal hover:bg-discord-hover rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-discord-text-normal mb-2">
                 Name
@@ -285,7 +295,7 @@ export function EditWebhookResponseModal({ response, routeId, onClose }: EditWeb
             <div className="flex justify-end gap-3 pt-4 border-t border-discord-dark">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={close}
                 disabled={isSubmitting}
                 className="px-4 py-2 text-discord-text-normal bg-discord-dark hover:bg-discord-hover rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -303,6 +313,6 @@ export function EditWebhookResponseModal({ response, routeId, onClose }: EditWeb
           </form>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </div>
   );
 }

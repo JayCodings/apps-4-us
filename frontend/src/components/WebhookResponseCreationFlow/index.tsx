@@ -106,11 +106,7 @@ export function WebhookResponseCreationFlow({ routeId, onClose }: WebhookRespons
     return stepComponents;
   }, [responseType, createdResponse, handleTypeSelection, handleConfigurationSubmit, handleActivate, onClose, isLoading, isActivating]);
 
-  const totalSteps = useMemo(() => {
-    if (!responseType) return 1;
-    if (!createdResponse) return 2;
-    return 3;
-  }, [responseType, createdResponse]);
+  const totalSteps = 3;
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
